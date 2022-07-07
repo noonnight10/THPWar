@@ -1,0 +1,173 @@
+# 이 스크립트는 saeol0415에 의해 제작되었습니다.
+# THP 컨텐츠 관련 서버에서만 사용될 수 있습니다.
+# 버전: 1.3
+# 필요한 플러그인: Skript
+# 사용 가능한 커멘드:
+# /war <start,stop> : 전쟁을 시작하거나 멈춤니다.
+# /stats [player] : GUI를 통해 해당 플레이어(빈칸일 경우 자신)의 킬,데스,현재 연킬,최대 연킬,남은 목숨을 확인합니다.
+# /reset : 킬,데스,연킬,목숨 등을 초기화합니다.
+
+function resetAll():
+ loop all players:
+  set {war} to 0   # 전쟁 시작 여부 (0 또는 1)
+  set {wLife} to 4   # 총 목숨
+  set {sLife} to 5   # 야생 목숨
+  set {rWLife::%loop-value%} to {wLife}   # 남은 전쟁 목숨 수
+  set {rSLife::%loop-value%} to {sLife}   # 남은 야생 목숨 수
+  set {kills::%loop-value%} to 0   # 총 킬수
+  set {deaths::%loop-value%} to 0   # 총 데스
+  set {kstreak::%loop-value%} to 0   # 현재 연킬 수 (죽으면 리셋)
+  set {maxkstreak::%loop-value%} to 0   # 최대 연킬 수
+  set {lastAttacked::%loop-value%} to ""   # 마지막으로 데미지를 입힌 사람 (죽으면 리셋)
+
+every 1 second:
+ loop all players:
+  if {rWLife::%loop-value%} = 0:
+   send action bar "&4사망했습니다" to loop-player
+  else if {rSLife::%loop-value%} = 0:
+   send action bar "&4사망했습니다" to loop-player
+  if {war} = 1:
+   if {rWLife::%loop-value%} = 1:
+    send action bar "&c전쟁 목숨: ❤" to loop-player
+   else if {rWLife::%loop-value%} = 2:
+    send action bar "&c전쟁 목숨: ❤❤" to loop-player
+   else if {rWLife::%loop-value%} = 3:
+    send action bar "&c전쟁 목숨: ❤❤❤" to loop-player
+   else if {rWLife::%loop-value%} = 4:
+    send action bar "&c전쟁 목숨: ❤❤❤❤" to loop-player
+  else:
+   if {rSLife::%loop-value%} = 1:
+    send action bar "&2야생 목숨: ❤" to loop-player
+   else if {rSLife::%loop-value%} = 2:
+    send action bar "&2야생 목숨: ❤❤" to loop-player
+   else if {rSLife::%loop-value%} = 3:
+    send action bar "&2야생 목숨: ❤❤❤" to loop-player
+   else if {rSLife::%loop-value%} = 4:
+    send action bar "&2야생 목숨: ❤❤❤❤" to loop-player
+   else if {rSLife::%loop-value%} = 5:
+    send action bar "&2야생 목숨: ❤❤❤❤❤" to loop-player
+
+on damage of player:
+ if {war} = 1:
+  if attacker is a player:
+   set {lastAttacked::%victim%} to attacker
+
+on death of player:
+ set {lastAttacked::%victim%} to ""
+ if {war} = 1:
+  if attacker is a player:
+   set {_a} to attacker
+  else:
+   if {lastAttacked::%victim%} is set:
+    set {_a} to {lastAttacked::%victim%}
+   else:
+    set {_a} to victim
+  add 1 to {kills::%{_a}%}
+  add 1 to {deaths::%victim%}
+  add 1 to {kstreak::%{_a}%}
+  if {kstreak::%{_a}%} > {maxkstreak::%{_a}%}:
+   set {maxkstreak::%{_a}%} to {kstreak::%{_a}%}
+  set {kstreak::%victim%} to 0
+  send "&9%{_a}%에 의해 죽었습니다." to victim
+  send "&9%victim%을 처치했습니다." to {_a}
+  send "&9현재 총 %{kills::%{_a}%}%킬을 했습니다." to {_a}
+  send "&9현재 연킬 수는 %{kstreak::%{_a}%}%이고, 최대 연킬 수는 %{maxkstreak::%{_a}%}%입니다." to {_a}
+  if {rWLife::%victim%} > 1:
+   add -1 to {rWLife::%victim%}
+   send "&9현재 총 %{deaths::%victim%}%번 죽었고, 목숨은 총 %{rWLife::%victim%}%개 남았습니다." to victim
+  else:
+   add -1 to {rWLife::%victim%}
+   broadcast "&9%victim%이 %{wLife}%번 사망해 더 이상 부활할 수 없습니다."
+   set victim's gamemode to spectator
+ else:
+  if {rSLife::%victim%} > 1:
+   add -1 to {rSLife::%victim%}
+   set {_sDeaths} to {sLife} - {rSLife::%victim%}
+   send "&9현재 총 %{_sDeaths}%번 죽었고, 목숨은 총 %{rSLife::%victim%}%개 남았습니다." to victim
+  else:
+   add -1 to {rSLife::%victim%}
+   broadcast "&9%victim%이 %{sLife}%번 사망해 더 이상 부활할 수 없습니다."
+   set victim's gamemode to spectator
+
+command /reset:
+ permission: op
+ trigger:
+  resetAll()
+  broadcast "&9킬,데스,연킬,목숨 등이 리셋 되었습니다."
+
+command /war <text>:
+ permission: op
+ trigger:
+  if arg-1 is "start":
+   if {war} = 1:
+    send "&c전쟁이 이미 시작했습니다." to player
+   else:
+    set {war} to 1
+    set the gamerule keepInventory of world "world" to false
+    set the gamerule keepInventory of world "nether" to false
+    set the gamerule keepInventory of world "end" to false
+    send "&a성공적으로 전쟁을 시작했습니다." to player
+    broadcast "&9전쟁 시작!"
+  else if arg-1 is "stop":
+   if {war} = 0:
+    send "&c전쟁이 시작하지 않았습니다." to player
+   else:
+    set {war} to 0
+    set the gamerule keepInventory of world "world" to true
+    set the gamerule keepInventory of world "nether" to true
+    set the gamerule keepInventory of world "end" to true
+    send "&a성공적으로 전쟁을 종료했습니다." to player
+    broadcast "&9전쟁 종료!"
+  else:
+   send "&c잘못된 커멘드입니다." to player
+   send "&c/war <start,stop> : 전쟁을 시작하거나 멈춤니다." to player
+
+command /stats [<offlineplayer>]:
+ trigger:
+  if arg-1 is not set:
+   set {_p} to player
+  else:
+   set {_p} to arg-1
+  if {rsLife::%{_p}%} = 1:
+   set {_sLifeName} to "&2야생 목숨: ❤"
+  else if {rsLife::%{_p}%} = 2:
+   set {_sLifeName} to "&2야생 목숨: ❤❤"
+  else if {rsLife::%{_p}%} = 3:
+   set {_sLifeName} to "&2야생 목숨: ❤❤❤"
+  else if {rsLife::%{_p}%} = 4:
+   set {_sLifeName} to "&2야생 목숨: ❤❤❤❤"
+  else if {rsLife::%{_p}%} = 5:
+   set {_sLifeName} to "&2야생 목숨: ❤❤❤❤❤"
+  else if {rsLife::%{_p}%} = 0:
+   set {_sLifeName} to "&2야생 목숨을 전부 잃었습니다."
+  else:
+   set {_sLifeName} to "&2야생 목숨: ❤❤❤❤❤"
+  if {rwLife::%{_p}%} = 1:
+   set {_wLifeName} to "&c전쟁 목숨: ❤"
+  else if {rwLife::%{_p}%} = 2:
+   set {_wLifeName} to "&c전쟁 목숨: ❤❤"
+  else if {rwLife::%{_p}%} = 3:
+   set {_wLifeName} to "&c전쟁 목숨: ❤❤❤"
+  else if {rwLife::%{_p}%} = 4:
+   set {_wLifeName} to "&c전쟁 목숨: ❤❤❤❤"
+  else if {rwLife::%{_p}%} = 0:
+   set {_wLifeName} to "&c전쟁 목숨을 전부 잃었습니다."
+  else:
+   set {_wLifeName} to "&c전쟁 목숨: ❤❤❤❤"
+  set {_gui} to a new chest inventory with 3 row with name "&9Stats"
+  set slot 3 of {_gui} to green bed named {_sLifeName}
+  set slot 4 of {_gui} to {_p}'s skull named "&e닉네임: %{_p}%"
+  set slot 5 of {_gui} to red bed named {_wLifeName}
+  set slot 11 of {_gui} to diamond sword named "&9전쟁 중 %{kills::%{_p}%} ? 0%킬"
+  set slot 12 of {_gui} to totem of undying named "&9전쟁 중 %{deaths::%{_p}%} ? 0%데스"
+  set slot 14 of {_gui} to netherite axe named "&9전쟁 중 현재 %{kstreak::%{_p}%} ? 0%연킬"
+  set slot 15 of {_gui} to amethyst shard named "&9전쟁 중 최대 %{maxkstreak::%{_p}%} ? 0%연킬"
+  set {_i} to 0
+  loop 20 times:
+   if {_i} is 3:
+    add 3 to {_i}
+   else if {_i} is 11 or 14:
+    add 2 to {_i}
+   set slot {_i} of {_gui} to gray stained glass pane named "&r"
+   add 1 to {_i}
+  open {_gui} to player
