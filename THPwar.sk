@@ -176,6 +176,10 @@ command /stats [<offlineplayer>]:
    add 1 to {_i}
   open {_gui} to player
 
+on inventory click:
+ if name of event-inventory is "&9Stats":
+  cancel event
+
 command /revive <offlineplayer>:
  permission: op
  trigger:
