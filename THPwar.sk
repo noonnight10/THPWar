@@ -1,24 +1,29 @@
 # 이 스크립트는 saeol0415에 의해 제작되었습니다.
 # THP 컨텐츠 관련 서버에서만 사용될 수 있습니다.
-# 버전: 1.3
+# 버전: 1.5
 # 필요한 플러그인: Skript
 # 사용 가능한 커멘드:
 # /war <start,stop> : 전쟁을 시작하거나 멈춤니다.
 # /stats [player] : GUI를 통해 해당 플레이어(빈칸일 경우 자신)의 킬,데스,현재 연킬,최대 연킬,남은 목숨을 확인합니다.
-# /reset : 킬,데스,연킬,목숨 등을 초기화합니다.
+# /revive <player> : 죽은 사람을 살립니다.
+# /kills <reset,set,add,get> <player> [int] : 플레이어의 킬 수를 수정 혹은 확인합니다.
+# /deaths <reset,set,add,get> <player> [int] : 플레이어의 데스 수를 수정 혹은 확인합니다.
+# /kstreak <reset,set,add,get> <player> [int] : 플레이어의 현재 연킬 값을 수정 혹은 확인합니다.
+# /maxkstreak <reset,set,add,get> <player> [int] : 플레이어의 최대 연킬 값을 수정 혹은 확인합니다.
+# /rslife <reset,set,add,get> <player> [int] : 플레이어의 남은 야생 목숨 수를 수정 혹은 확인합니다.
+# /rwlife <reset,set,add,get> <player> [int] : 플레이어의 남은 전쟁 목숨 수를 수정 혹은 확인합니다.
 
-function resetAll():
- loop all players:
-  set {war} to 0   # 전쟁 시작 여부 (0 또는 1)
-  set {wLife} to 4   # 총 목숨
-  set {sLife} to 5   # 야생 목숨
-  set {rWLife::%loop-value%} to {wLife}   # 남은 전쟁 목숨 수
-  set {rSLife::%loop-value%} to {sLife}   # 남은 야생 목숨 수
-  set {kills::%loop-value%} to 0   # 총 킬수
-  set {deaths::%loop-value%} to 0   # 총 데스
-  set {kstreak::%loop-value%} to 0   # 현재 연킬 수 (죽으면 리셋)
-  set {maxkstreak::%loop-value%} to 0   # 최대 연킬 수
-  set {lastAttacked::%loop-value%} to ""   # 마지막으로 데미지를 입힌 사람 (죽으면 리셋)
+function resetData(p:player):
+ set {war} to 0   # 전쟁 시작 여부 (0 또는 1)
+ set {wLife} to 4   # 총 목숨
+ set {sLife} to 5   # 야생 목숨
+ set {rWLife::%{_p}%} to {wLife}   # 남은 전쟁 목숨 수
+ set {rSLife::%{_p}%} to {sLife}   # 남은 야생 목숨 수
+ set {kills::%{_p}%} to 0   # 총 킬수
+ set {deaths::%{_p}%} to 0   # 총 데스
+ set {kstreak::%{_p}%} to 0   # 현재 연킬 수 (죽으면 리셋)
+ set {maxkstreak::%{_p}%} to 0   # 최대 연킬 수
+ set {lastAttacked::%{_p}%} to ""   # 마지막으로 데미지를 입힌 사람 (죽으면 리셋)
 
 every 1 second:
  loop all players:
@@ -46,6 +51,11 @@ every 1 second:
     send action bar "&2야생 목숨: ❤❤❤❤" to loop-player
    else if {rSLife::%loop-value%} = 5:
     send action bar "&2야생 목숨: ❤❤❤❤❤" to loop-player
+
+on join:
+ if {initJoin::%player%} is unset:
+  set {initJoin::%player%} to 1
+  resetData(player)
 
 on damage of player:
  if {war} = 1:
@@ -89,12 +99,6 @@ on death of player:
    broadcast "&9%victim%이 %{sLife}%번 사망해 더 이상 부활할 수 없습니다."
    set victim's gamemode to spectator
 
-command /reset:
- permission: op
- trigger:
-  resetAll()
-  broadcast "&9킬,데스,연킬,목숨 등이 리셋 되었습니다."
-
 command /war <text>:
  permission: op
  trigger:
@@ -128,29 +132,29 @@ command /stats [<offlineplayer>]:
    set {_p} to player
   else:
    set {_p} to arg-1
-  if {rsLife::%{_p}%} = 1:
+  if {rSLife::%{_p}%} = 1:
    set {_sLifeName} to "&2야생 목숨: ❤"
-  else if {rsLife::%{_p}%} = 2:
+  else if {rSLife::%{_p}%} = 2:
    set {_sLifeName} to "&2야생 목숨: ❤❤"
-  else if {rsLife::%{_p}%} = 3:
+  else if {rSLife::%{_p}%} = 3:
    set {_sLifeName} to "&2야생 목숨: ❤❤❤"
-  else if {rsLife::%{_p}%} = 4:
+  else if {rSLife::%{_p}%} = 4:
    set {_sLifeName} to "&2야생 목숨: ❤❤❤❤"
-  else if {rsLife::%{_p}%} = 5:
+  else if {rSLife::%{_p}%} = 5:
    set {_sLifeName} to "&2야생 목숨: ❤❤❤❤❤"
-  else if {rsLife::%{_p}%} = 0:
+  else if {rSLife::%{_p}%} = 0:
    set {_sLifeName} to "&2야생 목숨을 전부 잃었습니다."
   else:
    set {_sLifeName} to "&2야생 목숨: ❤❤❤❤❤"
-  if {rwLife::%{_p}%} = 1:
+  if {rWLife::%{_p}%} = 1:
    set {_wLifeName} to "&c전쟁 목숨: ❤"
-  else if {rwLife::%{_p}%} = 2:
+  else if {rWLife::%{_p}%} = 2:
    set {_wLifeName} to "&c전쟁 목숨: ❤❤"
-  else if {rwLife::%{_p}%} = 3:
+  else if {rWLife::%{_p}%} = 3:
    set {_wLifeName} to "&c전쟁 목숨: ❤❤❤"
-  else if {rwLife::%{_p}%} = 4:
+  else if {rWLife::%{_p}%} = 4:
    set {_wLifeName} to "&c전쟁 목숨: ❤❤❤❤"
-  else if {rwLife::%{_p}%} = 0:
+  else if {rWLife::%{_p}%} = 0:
    set {_wLifeName} to "&c전쟁 목숨을 전부 잃었습니다."
   else:
    set {_wLifeName} to "&c전쟁 목숨: ❤❤❤❤"
@@ -171,3 +175,171 @@ command /stats [<offlineplayer>]:
    set slot {_i} of {_gui} to gray stained glass pane named "&r"
    add 1 to {_i}
   open {_gui} to player
+
+command /revive <offlineplayer>:
+ permission: op
+ trigger:
+  if {rWLife::%arg-1%} = 0:
+   set {rWLife::%arg-1%} to {wLife}
+   broadcast "&9%arg-1%이 부활했습니다! 그의 남은 전쟁 목숨은 %{wLife}%개 입니다."
+  else if {rSLife::%arg-1%} = 0:
+   set {rSLife::%arg-1%} to {sLife}
+   broadcast "&9%arg-1%이 부활했습니다! 그의 남은 야생 목숨은 %{sLife}%개 입니다."
+  else:
+   send "&c%arg-1%는 아직 죽지 않았습니다."
+
+command /kills <text> <offlineplayer> [<integer>]:
+ permission: op
+ trigger:
+  if arg-1 is "reset":
+   set {kills::%arg-2%} to 0
+   send "&9%arg-2%의 킬수는 %{kills::%arg-2%}%이 되었습니다." to player
+  else if arg-1 is "set":
+   if arg-3 is set:
+    set {kills::%arg-2%} to arg-3
+    send "&9%arg-2%의 킬수는 %{kills::%arg-2%}%이 되었습니다." to player
+   else:
+    send "&c/kills <reset,set,add,get> <player> [int] : 플레이어의 킬 수를 수정 혹은 확인합니다." to player
+  else if arg-1 is "add":
+   if arg-3 is set:
+    add arg-3 to {kills::%arg-2%}
+    send "&9%arg-2%의 킬수는 %{kills::%arg-2%}%이 되었습니다." to player
+   else:
+    send "&c/kills <reset,set,add,get> <player> [int] : 플레이어의 킬 수를 수정 혹은 확인합니다." to player
+  else if arg-1 is "get":
+   if arg-3 is set:
+    send "&c/kills <reset,set,add,get> <player> [int] : 플레이어의 킬 수를 수정 혹은 확인합니다." to player
+   else:
+    send "&9%arg-2%의 킬수는 %{kills::%arg-2%}%입니다." to player
+  else:
+   send "&c/kills <reset,set,add,get> <player> [int] : 플레이어의 킬 수를 수정 혹은 확인합니다." to player
+
+command /deaths <text> <offlineplayer> [<integer>]:
+ permission: op
+ trigger:
+  if arg-1 is "reset":
+   set {deaths::%arg-2%} to 0
+   send "&9%arg-2%의 데스 수는 %{deaths::%arg-2%}%이 되었습니다." to player
+  else if arg-1 is "set":
+   if arg-3 is set:
+    set {deaths::%arg-2%} to arg-3
+    send "&9%arg-2%의 데스 수는 %{deaths::%arg-2%}%이 되었습니다." to player
+   else:
+    send "&c/deaths <reset,set,add,get> <player> [int] : 플레이어의 데스 수를 수정 혹은 확인합니다." to player
+  else if arg-1 is "add":
+   if arg-3 is set:
+    add arg-3 to {deaths::%arg-2%}
+    send "&9%arg-2%의 데스 수는 %{deaths::%arg-2%}%이 되었습니다." to player
+   else:
+    send "&c/deaths <reset,set,add,get> <player> [int] : 플레이어의 데스 수를 수정 혹은 확인합니다." to player
+  else if arg-1 is "get":
+   if arg-3 is set:
+    send "&c/deaths <reset,set,add,get> <player> [int] : 플레이어의 데스 수를 수정 혹은 확인합니다." to player
+   else:
+    send "&9%arg-2%의 데스 수는 %{deaths::%arg-2%}%입니다." to player
+  else:
+   send "&c/deaths <reset,set,add,get> <player> [int] : 플레이어의 데스 수를 수정 혹은 확인합니다." to player
+
+command /kstreak <text> <offlineplayer> [<integer>]:
+ permission: op
+ trigger:
+  if arg-1 is "reset":
+   set {kstreak::%arg-2%} to 0
+   send "&9%arg-2%의 현재 연킬 값은 %{kstreak::%arg-2%}%이 되었습니다." to player
+  else if arg-1 is "set":
+   if arg-3 is set:
+    set {kstreak::%arg-2%} to arg-3
+    send "&9%arg-2%의 현재 연킬 값은 %{kstreak::%arg-2%}%이 되었습니다." to player
+   else:
+    send "&c/kstreak <reset,set,add,get> <player> [int] : 플레이어의 현재 연킬 값을 수정 혹은 확인합니다." to player
+  else if arg-1 is "add":
+   if arg-3 is set:
+    add arg-3 to {kstreak::%arg-2%}
+    send "&9%arg-2%의 현재 연킬 값은 %{kstreak::%arg-2%}%이 되었습니다." to player
+   else:
+    send "&c/kstreak <reset,set,add,get> <player> [int] : 플레이어의 현재 연킬 값을 수정 혹은 확인합니다." to player
+  else if arg-1 is "get":
+   if arg-3 is set:
+    send "&c/kstreak <reset,set,add,get> <player> [int] : 플레이어의 현재 연킬 값을 수정 혹은 확인합니다." to player
+   else:
+    send "&9%arg-2%의 현재 연킬 값은 %{kstreak::%arg-2%}%입니다." to player
+  else:
+   send "&c/kstreak <reset,set,add,get> <player> [int] : 플레이어의 현재 연킬 값을 수정 혹은 확인합니다." to player
+
+command /maxkstreak <text> <offlineplayer> [<integer>]:
+ permission: op
+ trigger:
+  if arg-1 is "reset":
+   set {maxkstreak::%arg-2%} to 0
+   send "&9%arg-2%의 최대 연킬 값은 %{maxkstreak::%arg-2%}%이 되었습니다." to player
+  else if arg-1 is "set":
+   if arg-3 is set:
+    set {maxkstreak::%arg-2%} to arg-3
+    send "&9%arg-2%의 최대 연킬 값은 %{maxkstreak::%arg-2%}%이 되었습니다." to player
+   else:
+    send "&c/maxkstreak <reset,set,add,get> <player> [int] : 플레이어의 최대 연킬 값을 수정 혹은 확인합니다." to player
+  else if arg-1 is "add":
+   if arg-3 is set:
+    add arg-3 to {maxkstreak::%arg-2%}
+    send "&9%arg-2%의 최대 연킬 값은 %{maxkstreak::%arg-2%}%이 되었습니다." to player
+   else:
+    send "&c/maxkstreak <reset,set,add,get> <player> [int] : 플레이어의 최대 연킬 값을 수정 혹은 확인합니다." to player
+  else if arg-1 is "get":
+   if arg-3 is set:
+    send "&c/maxkstreak <reset,set,add,get> <player> [int] : 플레이어의 최대 연킬 값을 수정 혹은 확인합니다." to player
+   else:
+    send "&9%arg-2%의 최대 연킬 값은 %{maxkstreak::%arg-2%}%입니다." to player
+  else:
+   send "&c/maxkstreak <reset,set,add,get> <player> [int] : 플레이어의 최대 연킬 값을 수정 혹은 확인합니다." to player
+
+command /rslife <text> <offlineplayer> [<integer>]:
+ permission: op
+ trigger:
+  if arg-1 is "reset":
+   set {rSLife::%arg-2%} to {sLife}
+   send "&9%arg-2%의 남은 야생 목숨 수는 %{rSLife::%arg-2%}%이 되었습니다." to player
+  else if arg-1 is "set":
+   if arg-3 is set:
+    set {rSLife::%arg-2%} to arg-3
+    send "&9%arg-2%의 남은 야생 목숨 수는 %{rSLife::%arg-2%}%이 되었습니다." to player
+   else:
+    send "&c/rslife <reset,set,add,get> <player> [int] : 플레이어의 남은 야생 목숨 수를 수정 혹은 확인합니다." to player
+  else if arg-1 is "add":
+   if arg-3 is set:
+    add arg-3 to {rSLife::%arg-2%}
+    send "&9%arg-2%의 남은 야생 목숨 수는 %{rSLife::%arg-2%}%이 되었습니다." to player
+   else:
+    send "&c/rslife <reset,set,add,get> <player> [int] : 플레이어의 남은 야생 목숨 수를 수정 혹은 확인합니다." to player
+  else if arg-1 is "get":
+   if arg-3 is set:
+    send "&c/rslife <reset,set,add,get> <player> [int] : 플레이어의 남은 야생 목숨 수를 수정 혹은 확인합니다." to player
+   else:
+    send "&9%arg-2%의 남은 야생 목숨 수는 %{rSLife::%arg-2%}%입니다." to player
+  else:
+   send "&c/rslife <reset,set,add,get> <player> [int] : 플레이어의 남은 야생 목숨 수를 수정 혹은 확인합니다." to player
+
+command /rwlife <text> <offlineplayer> [<integer>]:
+ permission: op
+ trigger:
+  if arg-1 is "reset":
+   set {rWLife::%arg-2%} to {wLife}
+   send "&9%arg-2%의 남은 전쟁 목숨 수는 %{rWLife::%arg-2%}%이 되었습니다." to player
+  else if arg-1 is "set":
+   if arg-3 is set:
+    set {rWLife::%arg-2%} to arg-3
+    send "&9%arg-2%의 남은 전쟁 목숨 수는 %{rWLife::%arg-2%}%이 되었습니다." to player
+   else:
+    send "&c/rwlife <reset,set,add,get> <player> [int] : 플레이어의 남은 전쟁 목숨 수를 수정 혹은 확인합니다." to player
+  else if arg-1 is "add":
+   if arg-3 is set:
+    add arg-3 to {rWLife::%arg-2%}
+    send "&9%arg-2%의 남은 전쟁 목숨 수는 %{rWLife::%arg-2%}%이 되었습니다." to player
+   else:
+    send "&c/rwlife <reset,set,add,get> <player> [int] : 플레이어의 남은 전쟁 목숨 수를 수정 혹은 확인합니다." to player
+  else if arg-1 is "get":
+   if arg-3 is set:
+    send "&c/rwlife <reset,set,add,get> <player> [int] : 플레이어의 남은 전쟁 목숨 수를 수정 혹은 확인합니다." to player
+   else:
+    send "&9%arg-2%의 남은 전쟁 목숨 수는 %{rWLife::%arg-2%}%입니다." to player
+  else:
+   send "&c/rwlife <reset,set,add,get> <player> [int] : 플레이어의 남은 전쟁 목숨 수를 수정 혹은 확인합니다." to player
