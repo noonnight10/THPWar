@@ -53,7 +53,7 @@ every 1 second:
     send action bar "&2야생 목숨: ❤❤❤❤❤" to loop-player
 
 on join:
- if {initJoin::%player%} is unset:
+ if {initJoin::%player%} is not set:
   set {initJoin::%player%} to 1
   resetData(player)
 
