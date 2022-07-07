@@ -186,9 +186,11 @@ command /revive <offlineplayer>:
   if {rWLife::%arg-1%} = 0:
    set {rWLife::%arg-1%} to {wLife}
    broadcast "&9%arg-1%이 부활했습니다! 그의 남은 전쟁 목숨은 %{wLife}%개 입니다."
+   set arg-1's gamemode to survival
   else if {rSLife::%arg-1%} = 0:
    set {rSLife::%arg-1%} to {sLife}
    broadcast "&9%arg-1%이 부활했습니다! 그의 남은 야생 목숨은 %{sLife}%개 입니다."
+   set arg-1's gamemode to survival
   else:
    send "&c%arg-1%는 아직 죽지 않았습니다."
 
